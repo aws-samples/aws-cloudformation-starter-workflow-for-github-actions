@@ -6,6 +6,10 @@ Parameters:
     Type: String
     Default: production
     Description: The name of the environment to add this load balancer to
+  ECSTaskExecutionRole:
+    Type: String
+    Default: github-actions-ecs-task-execution-role
+    Description: The name of the IAM role for ECS Task Execution
   VPC:
     Description: VPC ID
     Type: AWS::EC2::VPC::Id
@@ -34,20 +38,6 @@ Resources:
     Properties:
       GroupDescription: Access to the Fargate containers
       VpcId: !Ref 'VPC'
-
-  # This is a role which is used by the ECS tasks themselves.
-  ECSTaskExecutionRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service: [ecs-tasks.amazonaws.com]
-          Action: ['sts:AssumeRole']
-      Path: /
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
 
   EcsSecurityGroupIngressFromPublicALB:
     Type: AWS::EC2::SecurityGroupIngress
@@ -129,8 +119,8 @@ Outputs:
     Export:
       Name: !Sub ${EnvironmentName}:ClusterName
   ECSTaskExecutionRole:
-    Description: The ARN of the ECS role
-    Value: !GetAtt 'ECSTaskExecutionRole.Arn'
+    Description: The ARN of the ECS task execution role
+    Value: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${ECSTaskExecutionRole}'
     Export:
       Name: !Sub ${EnvironmentName}:ECSTaskExecutionRole
   VpcId:

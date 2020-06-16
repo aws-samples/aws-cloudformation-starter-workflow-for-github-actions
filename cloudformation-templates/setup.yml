@@ -8,6 +8,9 @@ Parameters:
   CloudFormationDeploymentRoleName:
     Type: String
     Default: github-actions-cloudformation-stack-role
+  ECSTaskExecutionRoleName:
+    Type: String
+    Default: github-actions-ecs-task-execution-role
 
 Resources:
   GitHubActionsUser:
@@ -15,6 +18,7 @@ Resources:
     Properties:
       UserName: !Ref GitHubActionsUserName
 
+  # The permissions that the GitHub Actions deployment workflow will have
   GitHubActionsUserPolicy:
     Type: AWS::IAM::Policy
     Properties:
@@ -64,6 +68,7 @@ Resources:
           "SecretAccessKey":"${GitHubActionsUserAccessKey.SecretAccessKey}"
         }
 
+  # The permissions that the CloudFormation stack deployments will have
   CloudFormationDeploymentRole:
     Type: AWS::IAM::Role
     Properties:
@@ -78,9 +83,31 @@ Resources:
             Action:
               - "sts:AssumeRole"
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/IAMFullAccess
         - arn:aws:iam::aws:policy/AmazonVPCFullAccess
         - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryFullAccess
         - arn:aws:iam::aws:policy/AmazonECS_FullAccess
         - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
         - arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess
+      Policies:
+        - PolicyName: allow-pass-role-for-ecs-task-exec-role
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action: "iam:PassRole"
+                Effect: Allow
+                Resource: !GetAtt ECSTaskExecutionRole.Arn
+
+  # This is a role used to start and manage ECS tasks (pull the container image, etc)
+  ECSTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref ECSTaskExecutionRoleName
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: [ecs-tasks.amazonaws.com]
+          Action: ['sts:AssumeRole']
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
