@@ -33,7 +33,7 @@ aws secretsmanager get-secret-value \
   --output text
 ```
 
-Create two GitHub Actions secrets for the access key in your GitHub repository by going to Settings > Secrets.
+Create two GitHub Actions secrets for the access key in your GitHub repository by going to Settings > Secrets.  Alternatively, you can create these GitHub Actions secrets at the GitHub organization level, and grant access to the secrets to your new repository.
 1. Create a secret named `AWS_ACCESS_KEY_ID` containing the `AccessKeyId` value returned above.
 1. Create a secret named `AWS_SECRET_ACCESS_KEY` containing in the `SecretAccessKey` value returned above.
 
