@@ -76,11 +76,6 @@ jobs:
           PublicSubnetOne=${{ steps.vpc.outputs.subnet-one }},
           PublicSubnetTwo=${{ steps.vpc.outputs.subnet-two }}
 
-    - name: Print infrastructure stack outputs
-      env:
-        OUTPUTS: ${{ toJson(steps.infrastructure-stack.outputs) }}
-      run: echo "$OUTPUTS"
-
   # Build and deploy a Docker image to an ECS service through CloudFormation.
   #
   # This job can be copied multiple times to deploy different microservices
@@ -139,7 +134,8 @@ jobs:
           ServiceName=webapp,
           ImageUrl=${{ steps.build-image.outputs.image }}
 
-    - name: Print service stack outputs
+    - name: Print service URL
       env:
-        OUTPUTS: ${{ toJson(steps.service-stack.outputs) }}
-      run: echo "$OUTPUTS"
+        URL: ${{ steps.service-stack.outputs.ServiceURL }}
+      run: |
+        echo "Service URL: $URL"

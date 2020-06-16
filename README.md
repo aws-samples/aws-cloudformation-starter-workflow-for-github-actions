@@ -39,7 +39,7 @@ Create two GitHub Actions secrets for the access key in your GitHub repository b
 
 Go to the Actions tab, select the latest workflow run and its failed job, then select "Re-run jobs" > "Re-run all jobs".
 
-When the workflow successfully completes, expand the "Print service stack outputs" step in the "Deploy web application" job to see the URL for the deployed web application.
+When the workflow successfully completes, expand the "Print service URL" step in the "Deploy web application" job to see the URL for the deployed web application.
 
 ## Security
 
