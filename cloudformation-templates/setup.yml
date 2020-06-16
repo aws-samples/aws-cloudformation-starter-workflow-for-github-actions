@@ -1,0 +1,86 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Setup IAM user for GitHub Actions and IAM role for CloudFormation
+
+Parameters:
+  GitHubActionsUserName:
+    Type: String
+    Default: github-actions-cloudformation-deploy
+  CloudFormationDeploymentRoleName:
+    Type: String
+    Default: github-actions-cloudformation-stack-role
+
+Resources:
+  GitHubActionsUser:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: !Ref GitHubActionsUserName
+
+  GitHubActionsUserPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      Users:
+        - !Ref GitHubActionsUser
+      PolicyName: allow-github-actions-cloudformation-deploy
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action:
+              - "cloudformation:*"
+              - "ec2:DescribeVpcs"
+              - "ec2:DescribeSubnets"
+              - "ecr:GetAuthorizationToken"
+            Effect: Allow
+            Resource: "*"
+          - Action: "cloudformation:DeleteStack"
+            Effect: Deny
+            Resource: "*"
+          - Action: "iam:PassRole"
+            Effect: Allow
+            Resource: !GetAtt CloudFormationDeploymentRole.Arn
+          - Action:
+              - "ecr:GetDownloadUrlForLayer"
+              - "ecr:BatchGetImage"
+              - "ecr:BatchCheckLayerAvailability"
+              - "ecr:PutImage"
+              - "ecr:InitiateLayerUpload"
+              - "ecr:UploadLayerPart"
+              - "ecr:CompleteLayerUpload"
+            Effect: Allow
+            Resource: !Sub "arn:${AWS::Partition}:ecr:*:${AWS::AccountId}:repository/github-actions-*"
+
+  GitHubActionsUserAccessKey:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName: !Ref GitHubActionsUser
+      Serial: 1
+
+  GitHubActionsCredentials:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Ref GitHubActionsUserName
+      SecretString: !Sub |
+        {
+          "AccessKeyId":"${GitHubActionsUserAccessKey}",
+          "SecretAccessKey":"${GitHubActionsUserAccessKey.SecretAccessKey}"
+        }
+
+  CloudFormationDeploymentRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref CloudFormationDeploymentRoleName
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - cloudformation.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/IAMFullAccess
+        - arn:aws:iam::aws:policy/AmazonVPCFullAccess
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryFullAccess
+        - arn:aws:iam::aws:policy/AmazonECS_FullAccess
+        - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+        - arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess

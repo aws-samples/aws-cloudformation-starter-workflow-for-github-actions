@@ -1,0 +1,19 @@
+# This GitHub Actions workflow checks that the docker image still builds
+# successfully on every pull request to the repository.
+
+on:
+  [pull_request]
+
+name: Check
+
+jobs:
+  check:
+    name: Build Image
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Build image
+      run: |
+        docker build .
