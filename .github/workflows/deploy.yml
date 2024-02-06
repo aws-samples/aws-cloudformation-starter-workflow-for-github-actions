@@ -23,6 +23,9 @@ jobs:
   deploy-infrastructure:
     name: Deploy infrastructure
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     outputs:
       env-name: ${{ steps.env-name.outputs.environment }}
     steps:
@@ -46,8 +49,8 @@ jobs:
       id: creds
       uses: aws-actions/configure-aws-credentials@v4
       with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-actions-cloudformation-deploy-role
+        role-session-name: DeployInfra
         aws-region: us-east-2
 
     - name: Retrieve default VPC ID and public subnets
@@ -87,6 +90,9 @@ jobs:
   deploy-web-app:
     name: Deploy web application
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     needs: deploy-infrastructure
     steps:
     - name: Checkout
@@ -96,8 +102,8 @@ jobs:
       id: creds
       uses: aws-actions/configure-aws-credentials@v4
       with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-actions-cloudformation-deploy-role
+        role-session-name: DeployWebApp
         aws-region: us-east-2
 
     - name: Login ECR

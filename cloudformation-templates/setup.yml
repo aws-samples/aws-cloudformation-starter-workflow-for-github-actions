@@ -1,29 +1,74 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Setup IAM user for GitHub Actions and IAM role for CloudFormation
+Description: Set up IAM roles for GitHub Actions, CloudFormation, and ECS
 
 Parameters:
-  GitHubActionsUserName:
+  GitHubOrg:
+    Description: Name of your GitHub organization/user (case sensitive)
     Type: String
-    Default: github-actions-cloudformation-deploy
+  RepositoryName:
+    Description: Name of your GitHub repository (case sensitive)
+    Type: String
+  OIDCProviderArn:
+    Description: ARN of your GitHub OIDC Provider, if it exists already in your AWS account.
+    Default: ""
+    Type: String
+  OIDCAudience:
+    Description: Audience supplied to the configure-aws-credentials GitHub Action.
+    Default: "sts.amazonaws.com"
+    Type: String
+  GitHubActionsRoleName:
+    Description: The name of the role that GitHub Actions will use to deploy CloudFormation stacks.
+    Type: String
+    Default: github-actions-cloudformation-deploy-role
   CloudFormationDeploymentRoleName:
+    Description: The name of the role that CloudFormation will use to deploy the resources in stacks.
     Type: String
     Default: github-actions-cloudformation-stack-role
   ECSTaskExecutionRoleName:
     Type: String
+    Description: The name of the role that ECS will use to run tasks.
     Default: github-actions-ecs-task-execution-role
 
+Conditions:
+  CreateOIDCProvider: !Equals
+    - !Ref OIDCProviderArn
+    - ""
+
 Resources:
-  GitHubActionsUser:
-    Type: AWS::IAM::User
+  GitHubActionsOidc:
+    Type: AWS::IAM::OIDCProvider
+    Condition: CreateOIDCProvider
     Properties:
-      UserName: !Ref GitHubActionsUserName
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList:
+        - sts.amazonaws.com
+      ThumbprintList:
+        - ffffffffffffffffffffffffffffffffffffffff
+
+  GitHubActionsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref GitHubActionsRoleName
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRoleWithWebIdentity
+            Principal:
+              Federated: !If
+                - CreateOIDCProvider
+                - !Ref GitHubActionsOidc
+                - !Ref OIDCProviderArn
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: !Ref OIDCAudience
+              StringLike:
+                token.actions.githubusercontent.com:sub: !Sub repo:${GitHubOrg}/${RepositoryName}:*
 
   # The permissions that the GitHub Actions deployment workflow will have
-  GitHubActionsUserPolicy:
-    Type: AWS::IAM::Policy
+  GitHubActionsPolicy:
+    Type: AWS::IAM::RolePolicy
     Properties:
-      Users:
-        - !Ref GitHubActionsUser
+      RoleName: !Ref GitHubActionsRole
       PolicyName: allow-github-actions-cloudformation-deploy
       PolicyDocument:
         Version: "2012-10-17"
@@ -51,22 +96,6 @@ Resources:
               - "ecr:CompleteLayerUpload"
             Effect: Allow
             Resource: !Sub "arn:${AWS::Partition}:ecr:*:${AWS::AccountId}:repository/github-actions-*"
-
-  GitHubActionsUserAccessKey:
-    Type: AWS::IAM::AccessKey
-    Properties:
-      UserName: !Ref GitHubActionsUser
-      Serial: 1
-
-  GitHubActionsCredentials:
-    Type: AWS::SecretsManager::Secret
-    Properties:
-      Name: !Ref GitHubActionsUserName
-      SecretString: !Sub |
-        {
-          "AccessKeyId":"${GitHubActionsUserAccessKey}",
-          "SecretAccessKey":"${GitHubActionsUserAccessKey.SecretAccessKey}"
-        }
 
   # The permissions that the CloudFormation stack deployments will have
   CloudFormationDeploymentRole:

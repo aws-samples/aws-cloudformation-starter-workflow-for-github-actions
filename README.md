@@ -24,18 +24,17 @@ aws cloudformation deploy \
 ```
 You can review the permissions that your repository's GitHub Actions deployment workflow will have in the [setup.yml](cloudformation-templates/setup.yml) CloudFormation template.
 
-Retrieve the IAM access key credentials that GitHub Actions will use for deployments:
+Retrieve the account ID for the AWS account that GitHub Actions will use for deployments:
 ```
-aws secretsmanager get-secret-value \
-  --secret-id github-actions-cloudformation-deploy \
-  --region us-east-2 \
-  --query SecretString \
+aws sts get-caller-identity \
+  --query Account \
   --output text
 ```
 
-Create two GitHub Actions secrets for the access key in your GitHub repository by going to Settings > Secrets.  Alternatively, you can create these GitHub Actions secrets at the GitHub organization level, and grant access to the secrets to your new repository.
-1. Create a secret named `AWS_ACCESS_KEY_ID` containing the `AccessKeyId` value returned above.
-1. Create a secret named `AWS_SECRET_ACCESS_KEY` containing in the `SecretAccessKey` value returned above.
+Create a GitHub Actions secret named `AWS_ACCOUNT_ID` containing the account ID in your GitHub repository,
+by going to Settings > Secrets.
+Alternatively, you can create these GitHub Actions secrets at the GitHub organization level,
+and grant access to the secrets to your new repository.
 
 Go to the Actions tab, select the latest workflow run and its failed job, then select "Re-run jobs" > "Re-run all jobs".
 
