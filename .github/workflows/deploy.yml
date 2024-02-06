@@ -40,7 +40,7 @@ jobs:
       run: |
         ENVIRONMENT=`echo $REPO | tr "/" "-"`
         echo "Environment name: $ENVIRONMENT"
-        echo "::set-output name=environment::$ENVIRONMENT"
+        echo "environment=$ENVIRONMENT" >> "$GITHUB_OUTPUT"
 
     - name: Configure AWS credentials
       id: creds
@@ -54,13 +54,13 @@ jobs:
       id: vpc
       run: |
         VPC_ID=`aws ec2 describe-vpcs --filters "Name=isDefault, Values=true" --query 'Vpcs[].VpcId' --output text`
-        echo "::set-output name=vpc-id::$VPC_ID"
+        echo "vpc-id=$VPC_ID" >> "$GITHUB_OUTPUT"
 
         SUBNET_1=`aws ec2 describe-subnets --filters "Name=vpc-id,Values=$VPC_ID" "Name=default-for-az,Values=true" --query 'Subnets[0].SubnetId' --output text`
-        echo "::set-output name=subnet-one::$SUBNET_1"
+        echo "subnet-one=$SUBNET_1" >> "$GITHUB_OUTPUT"
 
         SUBNET_2=`aws ec2 describe-subnets --filters "Name=vpc-id,Values=$VPC_ID" "Name=default-for-az,Values=true" --query 'Subnets[1].SubnetId' --output text`
-        echo "::set-output name=subnet-two::$SUBNET_2"
+        echo "subnet-two=$SUBNET_2" >> "$GITHUB_OUTPUT"
 
     - name: Deploy infrastructure with CloudFormation
       id: infrastructure-stack
@@ -116,7 +116,7 @@ jobs:
       run: |
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-        echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+        echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
 
     # When copying this job to add another microservice, update the name of the stack and the
     # service name below (for example, 'backend' instead of 'webapp'). Also add parameter
