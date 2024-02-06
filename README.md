@@ -14,13 +14,14 @@ This repository contains two starter workflow files for GitHub Actions:
 
 Click the "Use this template" button above to create a new repository from this template.
 
-Clone your new repository, and deploy the IAM resources needed to enable GitHub Actions to deploy CloudFormation templates:
+Clone your new repository, and deploy the IAM resources needed to enable GitHub Actions to deploy CloudFormation templates. Replace the placeholder values for your GitHub org/user name and repository name below:
 ```
 aws cloudformation deploy \
   --stack-name github-actions-cloudformation-deploy-setup \
   --template-file cloudformation-templates/setup.yml \
   --capabilities CAPABILITY_NAMED_IAM \
-  --region us-east-2
+  --region us-east-2 \
+  --parameter-overrides GitHubOrg=my-github-org RepositoryName=my-repo-name
 ```
 You can review the permissions that your repository's GitHub Actions deployment workflow will have in the [setup.yml](cloudformation-templates/setup.yml) CloudFormation template.
 
@@ -32,7 +33,7 @@ aws sts get-caller-identity \
 ```
 
 Create a GitHub Actions secret named `AWS_ACCOUNT_ID` containing the account ID in your GitHub repository,
-by going to Settings > Secrets.
+by going to Settings > Secrets and variables > Actions.
 Alternatively, you can create these GitHub Actions secrets at the GitHub organization level,
 and grant access to the secrets to your new repository.
 
