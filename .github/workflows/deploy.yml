@@ -27,7 +27,7 @@ jobs:
       env-name: ${{ steps.env-name.outputs.environment }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
     # The "environment name" is used as the base for CloudFormation stack names,
     # and is derived from the GitHub repository name.
@@ -44,7 +44,7 @@ jobs:
 
     - name: Configure AWS credentials
       id: creds
-      uses: aws-actions/configure-aws-credentials@v1
+      uses: aws-actions/configure-aws-credentials@v4
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -90,11 +90,11 @@ jobs:
     needs: deploy-infrastructure
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
     - name: Configure AWS credentials
       id: creds
-      uses: aws-actions/configure-aws-credentials@v1
+      uses: aws-actions/configure-aws-credentials@v4
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -102,7 +102,7 @@ jobs:
 
     - name: Login ECR
       id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v1
+      uses: aws-actions/amazon-ecr-login@v2
 
     # When copying this job to add another microservice, update the image tag value
     # below (for example, 'backend' instead of 'webapp'). Also update the 'docker build'
